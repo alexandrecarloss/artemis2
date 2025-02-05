@@ -23,8 +23,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'accounts',
     'adocao',
     'venda',
+    'core',
 ]
 
 MIDDLEWARE = [
@@ -64,7 +66,7 @@ WSGI_APPLICATION = 'artemis.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'artemis',
+        'NAME': 'artemis2',
         'USER': 'root',
         'PASSWORD': 'root',
         'HOST': 'localhost',
