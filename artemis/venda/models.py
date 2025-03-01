@@ -1,178 +1,165 @@
 from django.db import models
-from accounts.models import Petshop, Pessoa
+from accounts.models import Petshop, Cliente
 from django.core.files.storage import default_storage
 import uuid
+from django.db.models import F
 
 class CategoriaProduto(models.Model):
-    ctpid = models.AutoField(primary_key=True)
-    ctpnome = models.CharField(max_length=100)
-    ctpdescricao = models.TextField(blank=True, null=True)
+    nome = models.CharField(max_length=100)
+    descricao = models.TextField(blank=True, null=True)
 
     class Meta:
-        db_table = 'categoria_produto'
+        verbose_name_plural = 'Categorias'
 
     def __str__(self):
-        return self.ctpnome
+        return self.nome
 
 
 class Produto(models.Model):
-    proid = models.AutoField(primary_key=True)
-    pronome = models.CharField(max_length=65)
-    propreco = models.DecimalField(max_digits=10, decimal_places=2)
-    prosaldo = models.PositiveIntegerField(blank=True, null=True)
-    propetshop = models.ForeignKey(Petshop, on_delete=models.CASCADE, db_column='propetshop_ptsid')
-    procategoria = models.ForeignKey(CategoriaProduto, on_delete=models.CASCADE, db_column='procategoria_produto_ctpid')
-
-    class Meta:
-        db_table = 'produto'
+    nome = models.CharField(max_length=65)
+    preco = models.DecimalField(max_digits=10, decimal_places=2)
+    saldo = models.PositiveIntegerField(blank=True, null=True)
+    petshop = models.ForeignKey(Petshop, on_delete=models.PROTECT, related_name='produtos')
+    categoria = models.ForeignKey(CategoriaProduto, on_delete=models.PROTECT, related_name='produtos')
 
     def __str__(self):
-        return self.pronome
+        return self.nome
 
 
 class TipoServico(models.Model):
-    tpsid = models.AutoField(primary_key=True)
-    tpsnome = models.CharField(max_length=70)
-    tpsdescricao = models.TextField(blank=True, null=True)
+    nome = models.CharField(max_length=70)
+    descricao = models.TextField(blank=True, null=True)
 
     class Meta:
-        db_table = 'tipo_servico'
+        verbose_name_plural = 'Tipos de Serviço'
 
     def __str__(self):
-        return self.tpsnome
+        return self.nome
 
 
 class Servico(models.Model):
-    serid = models.AutoField(primary_key=True)
-    serdescricao = models.CharField(max_length=200, blank=True, null=True)
-    servalor = models.DecimalField(max_digits=10, decimal_places=2)
-    serpetshop = models.ForeignKey(Petshop, on_delete=models.CASCADE, db_column='serpetshop_ptsid')
-    sertipo = models.ForeignKey(TipoServico, on_delete=models.CASCADE, db_column='sertipo_servico_tpsid')
+    descricao = models.CharField(max_length=200, blank=True, null=True)
+    valor = models.DecimalField(max_digits=10, decimal_places=2)
+    petshop = models.ForeignKey(Petshop, on_delete=models.PROTECT, related_name='servicos')
+    tipo = models.ForeignKey(TipoServico, on_delete=models.PROTECT, related_name='servicos')
 
     class Meta:
-        db_table = 'servico'
+        verbose_name_plural = 'Serviços'
 
     def __str__(self):
-        return f'Serviço: {self.sertipo.tpsnome} - R$ {self.servalor}'
+        return f'Serviço: {self.tipo.nome} {self.descricao} - R$ {self.valor}'
 
 
 class Avaliacao(models.Model):
-    avaid = models.AutoField(primary_key=True)
-    avaproduto = models.ForeignKey(Produto, on_delete=models.CASCADE, blank=True, null=True, db_column='avaproduto_proid')
-    avaservico = models.ForeignKey(Servico, on_delete=models.CASCADE, blank=True, null=True, db_column='avaservico_serid')
-    avadescricao = models.TextField(blank=True, null=True)
-    avavalor = models.PositiveSmallIntegerField()
-    avapessoa = models.ForeignKey(Pessoa, on_delete=models.CASCADE, db_column='avapessoa_pesid')
-    avadatahora = models.DateTimeField(auto_now_add=True)
+    produto = models.ForeignKey(Produto, on_delete=models.CASCADE, blank=True, null=True, related_name='avaliacoes')
+    servico = models.ForeignKey(Servico, on_delete=models.CASCADE, blank=True, null=True, related_name='avaliacoes')
+    descricao = models.TextField(blank=True, null=True)
+    valor = models.PositiveSmallIntegerField()
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='avaliacoes')
+    criacao = models.DateTimeField(auto_now_add=True)
+    atualizacao = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'avaliacao'
-
-    def __str__(self):
-        return f'Avaliação {self.avavalor} de {self.avapessoa.pesnome}'
-
-
-class Favorito(models.Model):
-    favid = models.AutoField(primary_key=True)
-    favproduto = models.ForeignKey(Produto, on_delete=models.CASCADE, blank=True, null=True, db_column='favproduto_proid')
-    favservico = models.ForeignKey(Servico, on_delete=models.CASCADE, blank=True, null=True, db_column='favservico_serid')
-    favpessoa = models.ForeignKey(Pessoa, on_delete=models.CASCADE, db_column='favpessoa_pesid')
-    favdatahora = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = 'favorito'
         constraints = [
-            models.UniqueConstraint(fields=['favpessoa', 'favproduto'], name='unique_favorito_produto'),
-            models.UniqueConstraint(fields=['favpessoa', 'favservico'], name='unique_favorito_servico'),
+            models.UniqueConstraint(fields=['cliente', 'produto'], name='unique_avaliacao_produto'),
+            models.UniqueConstraint(fields=['cliente', 'servico'], name='unique_avaliacao_servico'),
         ]
 
     def __str__(self):
-        return f'Favorito de {self.favpessoa.pesnome} - {self.favdatahora}'
+        return f'Avaliação {self.valor} de {self.cliente.nome}'
 
 
-class Carrinho(models.Model):
-    carid = models.AutoField(primary_key=True)
-    carproduto = models.ForeignKey(Produto, on_delete=models.CASCADE, blank=True, null=True, db_column='carproduto_proid')
-    carservico = models.ForeignKey(Servico, on_delete=models.CASCADE, blank=True, null=True, db_column='carservico_serid')
-    carpessoa = models.ForeignKey(Pessoa, on_delete=models.CASCADE, db_column='carpessoa_pesid')
-    carquantidade = models.PositiveIntegerField()
-    carprecototal = models.DecimalField(max_digits=10, decimal_places=2)
-
-    class Meta:
-        db_table = 'carrinho'
-
-    def __str__(self):
-        return f'Carrinho de {self.carpessoa.pesnome} - {self.carquantidade}x {self.carproduto.pronome if self.carproduto else self.carservico.serdescricao}'
-
-
-class FormaPagamento(models.Model):
-    fpgid = models.AutoField(primary_key=True)
-    fpgdescricao = models.CharField(max_length=65)
+class Favorito(models.Model):
+    produto = models.ForeignKey(Produto, on_delete=models.CASCADE, blank=True, null=True, related_name='favoritos')
+    servico = models.ForeignKey(Servico, on_delete=models.CASCADE, blank=True, null=True, related_name='favoritos')
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='favoritos')
+    criacao = models.DateTimeField(auto_now_add=True)
+    atualizacao = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'forma_pagamento'
+        constraints = [
+            models.UniqueConstraint(fields=['cliente', 'produto'], name='unique_favorito_produto'),
+            models.UniqueConstraint(fields=['cliente', 'servico'], name='unique_favorito_servico'),
+        ]
 
     def __str__(self):
-        return self.fpgdescricao
+        return f'Favorito de {self.cliente.nome} - {self.criacao}'
 
 
-class Venda(models.Model):
-    venid = models.AutoField(primary_key=True)
-    venproduto = models.ForeignKey(Produto, on_delete=models.CASCADE, db_column='venproduto_proid')
-    venformapagamento = models.ForeignKey(FormaPagamento, on_delete=models.DO_NOTHING, db_column='venformapagamento_fpgid')
-    venpessoa = models.ForeignKey(Pessoa, on_delete=models.CASCADE, db_column='venpessoa_pesid')
-    venvalortotal = models.DecimalField(max_digits=10, decimal_places=2)
-    vendatahora = models.DateTimeField(auto_now_add=True)
-    venquantidade = models.PositiveIntegerField()
+class Compra(models.Model):
+    class FormaPagamento(models.IntegerChoices):
+        CARTAO = 1, 'Cartão'
+        PIX = 2, 'Pix'
+        BOLETO = 3, 'Boleto'
 
-    class Meta:
-        db_table = 'venda'
+    class StatusCompra(models.IntegerChoices):
+        CARRINHO = 1, 'Carrinho'
+        REALIZADO = 2, 'Realizado'
+        PAGO = 3, 'Pago'
+        ENTREGUE = 4, 'Entregue'
+        CANCELADO = 5, 'Cancelado'
+        RETORNO = 6, 'Retorno'
+
+    formapagamento = models.IntegerField(choices=FormaPagamento.choices)
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='compras')
+    status = models.IntegerField(choices=StatusCompra.choices, default=StatusCompra.CARRINHO)
+    criacao = models.DateTimeField(auto_now_add=True)
+    atualizacao = models.DateTimeField(auto_now=True)
+
+    @property
+    def total(self):
+        queryset = self.itens.all().aggregate(
+            total = models.Sum(F('quantidade') * F('produto__preco'))
+        )
+        return queryset['total'] if queryset else 0.0
 
     def __str__(self):
-        return f'Venda de {self.venquantidade}x {self.venproduto.pronome} para {self.venpessoa.pesnome}'
+        return f'Compra de {self.cliente.nome}'
+
+
+class ItensCompra(models.Model):
+    compra = models.ForeignKey(Compra, on_delete=models.CASCADE, related_name="itens")
+    produto = models.ForeignKey(Produto, on_delete=models.PROTECT, related_name="+")
+    quantidade = models.IntegerField()
 
 
 def produto_foto_path(instance, filename):
     ext = filename.split('.')[-1] 
     filename = f"{uuid.uuid4()}.{ext}" 
-    return f'venda/images/produtos/{instance.produto_proid.pronome}/{filename}'
+    return f'venda/images/produtos/{instance.produto.nome}/{filename}'
 
 class ProdutoFoto(models.Model):
-    prfid = models.AutoField(primary_key=True)
-    prffoto = models.ImageField(upload_to=produto_foto_path, max_length=100, verbose_name="Foto do Produto", blank=False, null=False)
-    produto_proid = models.ForeignKey(Produto, on_delete=models.CASCADE, db_column='produto_proid', verbose_name="Produto")
+    foto = models.ImageField(upload_to=produto_foto_path, max_length=100, blank=False, null=False)
+    produto = models.ForeignKey(Produto, on_delete=models.CASCADE, related_name='fotos')
 
     def delete(self, *args, **kwargs):
-        if self.prffoto and default_storage.exists(self.prffoto.name):
-            self.prffoto.delete(save=False)
+        if self.foto and default_storage.exists(self.foto.name):
+            self.foto.delete(save=False)
         super().delete(*args, **kwargs)
 
     class Meta:
-        db_table = 'produto_foto'
         verbose_name = "Foto do Produto"
         verbose_name_plural = "Fotos dos Produtos"
 
     def __str__(self):
-        return f"{self.produto_proid.pronome} - {self.prffoto.name if self.prffoto else 'Sem Foto'}"
+        return f"{self.produto.nome} - {self.foto.name if self.foto else 'Sem Foto'}"
 
 class Solicita(models.Model):
-    STATUS_CHOICES = [
-        ('RE', 'Requerido'),
-        ('CA', 'Cancelado'),
-        ('CO', 'Concluído'),
-    ]
-    
-    solid = models.AutoField(primary_key=True)
-    pessoa_pesid = models.ForeignKey(Pessoa, models.CASCADE, db_column='pessoa_pesid')
-    servico_serid = models.ForeignKey(Servico, models.CASCADE, db_column='servico_serid')
-    soldthr = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    solstatus = models.CharField(max_length=2, choices=STATUS_CHOICES)
+    class Status(models.IntegerChoices):
+        REQUERIDO = 1, 'Requerido'
+        CANCELADO = 2, 'Cancelado'
+        CONCLUIDO = 3, 'Concluído'
+        REJEITADO = 4, 'Rejeitado'
+
+    cliente = models.ForeignKey(Cliente, models.CASCADE, related_name='solicitacoes')
+    servico = models.ForeignKey(Servico, models.CASCADE, related_name='solicitacoes')
+    status = models.IntegerField(choices=Status.choices, default=Status.REQUERIDO)
+    criacao = models.DateTimeField(auto_now_add=True)
+    atualizacao = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'solicita'
         verbose_name = "Solicitação"
         verbose_name_plural = "Solicitações"
 
     def __str__(self):
-        return f'Solicitação {self.solid} - {self.pessoa_pesid.pesnome} - {self.servico_serid.serdescricao}'
+        return f'Solicitação de {self.cliente.nome} - {self.servico.descricao}'
