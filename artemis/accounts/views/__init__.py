@@ -1,0 +1,2 @@
+from .endereco import EnderecoViewSet
+

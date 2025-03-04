@@ -4,7 +4,7 @@ from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator
 from django.utils import timezone
 from datetime import date
-from accounts.models import Pessoa, Ong
+from accounts.models import Cliente, Ong
 
 ########################### Classes Adoção
 
@@ -69,7 +69,7 @@ class Pet(models.Model):
         verbose_name="Data de Nascimento"
     )
     petpeso = models.FloatField(verbose_name="Peso do Pet")
-    pessoa_pesid = models.ForeignKey(Pessoa, models.CASCADE, db_column='pessoa_pesid', blank=True, null=True, verbose_name="Dono do Pet")
+    cliente_pesid = models.ForeignKey(Cliente, models.CASCADE, db_column='cliente_pesid', blank=True, null=True, verbose_name="Dono do Pet")
     pet_porte_ptpid = models.ForeignKey(PetPorte, models.CASCADE, db_column='pet_porte_ptpid', verbose_name="Porte do Pet")
     pet_raca_ptrid = models.ForeignKey(PetRaca, models.CASCADE, db_column='pet_raca_ptrid', verbose_name="Raça do Pet")
     pet_tipo_pttid = models.ForeignKey(PetTipo, models.CASCADE, db_column='pet_tipo_pttid', verbose_name="Tipo do Pet")
@@ -137,7 +137,7 @@ class TentativaAdota(models.Model):
     ]
 
     ttaid = models.AutoField(primary_key=True)
-    ttapes = models.ForeignKey(Pessoa, models.CASCADE, db_column='ttapes', verbose_name="Pessoa")
+    ttapes = models.ForeignKey(Cliente, models.CASCADE, db_column='ttapes', verbose_name="Cliente")
     tta_petadocao = models.ForeignKey(PetAdocao, models.CASCADE, db_column='tta_petadocao', verbose_name="Pet para Adoção")
     ttastatus = models.CharField(max_length=2, choices=STATUS_CHOICES, verbose_name="Status da Tentativa")
     ttadthora = models.DateTimeField(auto_now_add=True, verbose_name="Data e Hora da Tentativa")

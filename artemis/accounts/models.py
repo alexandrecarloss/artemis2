@@ -23,7 +23,7 @@ class Cliente(models.Model):
     sexo = models.CharField(max_length=1, choices=Sexo.choices)
     telefone = models.CharField(max_length=15)
     email = models.CharField(unique=True, max_length=70, blank=False, null=False)
-    endereco = models.ForeignKey(Endereco, on_delete=models.PROTECT, related_name="pessoas")
+    endereco = models.ForeignKey(Endereco, on_delete=models.PROTECT, related_name="clientes")
 
     def __str__(self):
         return self.nome
