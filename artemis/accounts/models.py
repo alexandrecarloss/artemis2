@@ -1,7 +1,8 @@
+from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-########################### Classes account
+########################### Classes account ########################### 
 
 class Endereco(models.Model):
     logradouro = models.CharField(max_length=255)
@@ -17,18 +18,28 @@ class Endereco(models.Model):
 
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self, username, password=None, **extra_fields):
-        user = self.model(username=username, **extra_fields)
+    def _create_user(self, username, password, **extra_fields):
+        now = timezone.now()
+        if not username:
+            raise ValueError("O campo 'username' é obrigatório.")
+        if not password:
+            raise ValueError("O campo 'password' é obrigatório.")
+        user = self.model(username=username, **extra_fields, is_active=True, last_login=now, date_joined=now)
         user.set_password(password)
+        print('passou aqui')  
         user.save(using=self._db)
         return user
-
-    def create_superuser(self, username, password=None, **extra_fields):
+    
+    def create_user(self, username, password=None, **extra_fields):
+        print('comun criado aqui')
+        return self._create_user(username, password, **extra_fields)
+    
+    def create_superuser(self, username, password, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-
-        return self.create_user(username=username, password=password, **extra_fields)
-
+        user=self._create_user(username, password, **extra_fields)
+        print('criado aqui')
+        return user
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     class UserTypes(models.TextChoices):
@@ -37,7 +48,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         PETSHOP = 'petshop', 'Petshop'
     username = models.CharField(max_length=100, unique=True)
     tipo = models.CharField(max_length=10, choices=UserTypes.choices)
-    email = models.EmailField(unique=True)
+    email = models.EmailField(unique=True, blank=False, null=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
@@ -79,7 +90,6 @@ class Petshop(models.Model):
     nome = models.CharField(max_length=100, blank=False, null=False)
     cnpj = models.CharField(max_length=20, blank=False, null=False)
     telefone = models.CharField(max_length=15)
-    email = models.CharField(unique=True, max_length=70, blank=False, null=False)
     endereco = models.ForeignKey(Endereco, on_delete=models.CASCADE, related_name="petshops")
 
     def __str__(self):
@@ -89,7 +99,6 @@ class Ong(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
     nome = models.CharField(max_length=65, blank=False, null=False)
     telefone = models.CharField(max_length=15, blank=False, null=False)
-    email = models.CharField(max_length=70, blank=False, null=False)
     endereco = models.ForeignKey(Endereco, on_delete=models.PROTECT, related_name="ongs")
 
     def __str__(self):

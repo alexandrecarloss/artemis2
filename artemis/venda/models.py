@@ -81,6 +81,7 @@ class Favorito(models.Model):
             models.UniqueConstraint(fields=['cliente', 'produto'], name='unique_favorito_produto'),
             models.UniqueConstraint(fields=['cliente', 'servico'], name='unique_favorito_servico'),
         ]
+        
 
     def __str__(self):
         return f'Favorito de {self.cliente.nome} - {self.criacao}'

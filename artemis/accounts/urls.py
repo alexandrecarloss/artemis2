@@ -1,12 +1,15 @@
 from django.urls import path, include
-from rest_framework import routers
 from accounts import views as accountsViews
 
-router = routers.DefaultRouter()
+from rest_framework.routers import SimpleRouter
+
+router = SimpleRouter()
 router.register(r'enderecos', accountsViews.EnderecoViewSet)
 router.register(r'clientes', accountsViews.ClienteViewSet)
+router.register(r'customUsers', accountsViews.CustomUserViewSet)
+router.register(r'petshops', accountsViews.PetshopViewSet)
 
 urlpatterns = [
-    path('accounts/', include(router.urls)),
-    path('login/', accountsViews.LoginView.as_view(), name='login'),
+    path('/', include(router.urls)),
+    # path('login/', accountsViews.LoginView.as_view(), name='login'),
 ]

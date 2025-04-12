@@ -18,8 +18,8 @@ urlpatterns = [
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path('admin/', admin.site.urls),
     # Endpoints
-    path('api/', include(accountsUrls))
-    # path('venda/', include('venda.urls')),
+    path('api/accounts', include(accountsUrls)),
+    path('api/venda', include('venda.urls')),
     # path('adocao/', include('adocao.urls')),
     # path('accounts/', include('accounts.urls')),
 ]
